@@ -1,0 +1,5 @@
+awscliv2
+numpy
+pandas
+boto3
+sagemaker

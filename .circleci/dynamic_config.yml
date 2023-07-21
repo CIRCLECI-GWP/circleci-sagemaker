@@ -1,0 +1,120 @@
+version: 2.1
+
+parameters:
+  deploy-abalone:
+    type: boolean
+    default: false
+  deploy-churn:
+    type: boolean
+    default: false
+
+executors:
+  python:
+    docker:
+      - image: python:3.11
+
+commands:
+  setup-python-dependencies:
+    description: Set up the python environment
+    steps:
+      - checkout
+      - run:
+          name: install python dependencies
+          command: pip install -r requirements.txt --upgrade
+
+jobs:
+
+  abalone-model-train:
+    executor: python
+    environment:
+      MODEL_NAME: abalone-model
+      MODEL_DESC: abalone model description text
+    steps:
+      - setup-python-dependencies
+      - run:
+          name: gather data
+          command: python abalone_model/gather_data.py
+      - run:
+          name: train and register model
+          command: python abalone_model/train_register.py
+
+  abalone-model-deploy:
+    executor: python
+    environment:
+      MODEL_NAME: abalone-model
+      MODEL_DESC: abalone model description text
+    steps:
+      - setup-python-dependencies
+      - run:
+          name: deploy model
+          command: python abalone_model/deploy.py
+
+  churn-model-train:
+    executor: python
+    environment:
+      MODEL_NAME: churn-model
+      MODEL_DESC: churn model description text
+    steps:
+      - setup-python-dependencies
+      - run:
+          name: gather data
+          command: python churn_model/gather_data.py
+      - run:
+          name: train and register model
+          command: python churn_model/train_register.py
+
+  churn-model-deploy:
+    executor: python
+    environment:
+      MODEL_NAME: churn-model
+      MODEL_DESC: churn model description text
+    steps:
+      - setup-python-dependencies
+      - run:
+          name: deploy model
+          command: python churn_model/deploy.py
+
+workflows:
+  abalone-model:
+    when: << pipeline.parameters.deploy-abalone >>
+    jobs:
+      - abalone-model-train:
+          filters:
+            branches:
+              ignore:
+                - main
+      - request-deployment:
+          type: approval
+          filters:
+            branches:
+              ignore:
+                - main
+          requires:
+            - abalone-model-train
+      - abalone-model-deploy:
+          filters:
+            branches:
+              only:
+                - main
+
+  churn-model:
+    when: << pipeline.parameters.deploy-churn >>
+    jobs:
+      - churn-model-train:
+          filters:
+            branches:
+              ignore:
+                - main
+      - request-deployment:
+          type: approval
+          filters:
+            branches:
+              ignore:
+                - main
+          requires:
+            - request-deployment
+      - abalone-model-deploy:
+          filters:
+            branches:
+              only:
+                - main

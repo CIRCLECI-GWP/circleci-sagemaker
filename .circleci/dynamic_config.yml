@@ -112,7 +112,7 @@ workflows:
               ignore:
                 - main
           requires:
-            - request-deployment
+            - churn-model-train
       - churn-model-deploy:
           filters:
             branches:

@@ -112,8 +112,8 @@ workflows:
               ignore:
                 - main
           requires:
-            - request-deployment
-      - abalone-model-deploy:
+            - churn-model-train
+      - churn-model-deploy:
           filters:
             branches:
               only:
